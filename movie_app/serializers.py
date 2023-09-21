@@ -17,10 +17,10 @@ class MovieList(serializers.ModelSerializer):
         fields = ('title', 'description', 'duration', 'director_id')
 
 
-class ReviewMovie(serializers.ModelSerializer):
+class ReviewList(serializers.ModelSerializer):
     class Meta:
         model = Review
-        fields = "__all__"
+        fields = ('text', 'movie', 'rating')
 
 class AverageSerializer(serializers.ModelSerializer):
     average_rating = serializers.SerializerMethodField()

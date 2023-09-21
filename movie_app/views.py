@@ -4,7 +4,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 from movie_app.models import Director, Movie, Review
-from movie_app.serializers import DirectorList, MovieList, ReviewMovie, AverageSerializer
+from movie_app.serializers import DirectorList, MovieList, ReviewList, AverageSerializer
 
 
 @api_view(['GET', 'POST'])
@@ -66,34 +66,72 @@ def movie(request):
 
         return Response(data, status=201)
 
-@api_view(['GET'])
+@api_view(['GET', 'PUT', 'DELETE'])
 def movie_detail(request, id):
-    movie_name = Movie.objects.get(id=id)
-    movie_list = MovieList(instance=movie_name, many=False).data
+    try:
+        data = Movie.objects.get(id=id)
+    except Movie.DoesNotExist:
+        return Response({'ERROR': 'Ничего не найдено!'}, status=404)
 
-    return Response(movie_list)
+    if request.method == 'GET':
+        serializer = MovieList(instance=data, many=False).data
 
-@api_view(['GET'])
+        return Response(serializer, status=200)
+    elif request.method == 'PUT':
+        data.title = request.data.get('title', data.title)
+        data.description = request.data.get('description', data.description)
+        data.duration = request.data.get('duration', data.duration)
+        data.director = request.data.get('director', data.director)
+        data.save()
+
+        movi_edit = MovieList(instance=data, many=False).data
+        return Response(movi_edit, status=200)
+    elif request.method == 'DELETE':
+        data.delete()
+        return Response(status=204)
+
+@api_view(['GET','POST'])
 def review(request):
-    review = Review.objects.all()
-    movie_review = ReviewMovie(instance=review, many=True).data
+    if request.method == 'GET':
+        review = Review.objects.all()
+        movie_review = ReviewList(instance=review, many=True).data
 
-    return Response(movie_review)
+        return Response(movie_review)
+    elif request.method == 'POST':
+        text = request.data.get('text')
+        movie = request.data.get('movie')
+        rating = request.data.get('rating')
 
-@api_view(['GET'])
+        post = Review.objects.create(
+            text=text,
+            movie=movie,
+            rating=rating,
+        )
+
+        data = ReviewList(instance=post, many=False).data
+        return Response(data, status=201)
+
+@api_view(['GET','PUT','DELETE'])
 def review_detial(request, id):
-    review = Review.objects.get(id=id)
-    movie_review = ReviewMovie(instance=review, many=False).data
+    try:
+        review = Review.objects.get(id=id)
+    except Review.DoesNotExist:
+        return Response({'ERROR': 'Ничего не найдено!'}, status=404)
+    if request.method == 'GET':
+        movie_review = ReviewList(instance=review, many=False).data
+        return Response(movie_review)
+    elif request.method == 'PUT':
+        review.text = request.data.get('text', review.text)
+        review.movie = request.data.get('movie', review.movie)
+        review.rating = request.data.get('rating', review.rating)
+        review.save()
 
-    return Response(movie_review)
+        review_edit = ReviewList(instance=review, many=False).data
+        return Response(review_edit, status=200)
 
-@api_view(['GET'])
-def movie(request):
-    movie_name = Movie.objects.all()
-    movie_list = MovieList(instance=movie_name, many=True).data
-
-    return Response(movie_list)
-
+    elif request.method == 'DELETE':
+        review.delete()
+        return Response(status=204)
 @api_view(['GET'])
 def movie_reviews(request):
     reviews = Review.objects.all()
