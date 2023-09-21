@@ -1,17 +1,17 @@
+from django.db.models import Count
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 from movie_app.models import Director, Movie, Review
-from movie_app.serializers import DirectorList, MovieList, ReviewMovie
+from movie_app.serializers import DirectorList, MovieList, ReviewMovie, AverageSerializer
 
 
 @api_view(['GET'])
 def directors_name(request):
-    name = Director.objects.all()
+    directors = Director.objects.annotate(movies_count=Count('movie'))
+    serializer = DirectorList(instance=directors, many=True)
+    return Response(serializer.data)
 
-    data = DirectorList(instance=name, many=True).data
-
-    return Response(data)
 
 @api_view(['GET'])
 def director(request, id):
@@ -48,3 +48,16 @@ def review_detial(request, id):
     movie_review = ReviewMovie(instance=review, many=False).data
 
     return Response(movie_review)
+
+@api_view(['GET'])
+def movie(request):
+    movie_name = Movie.objects.all()
+    movie_list = MovieList(instance=movie_name, many=True).data
+
+    return Response(movie_list)
+
+@api_view(['GET'])
+def movie_reviews(request):
+    reviews = Review.objects.all()
+    serializer = AverageSerializer(instance=reviews, many=True)
+    return Response(serializer.data)
