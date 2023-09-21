@@ -14,7 +14,7 @@ class DirectorList(serializers.ModelSerializer):
 class MovieList(serializers.ModelSerializer):
     class Meta:
         model = Movie
-        fields = '__all__'
+        fields = ('title', 'description', 'duration', 'director_id')
 
 
 class ReviewMovie(serializers.ModelSerializer):

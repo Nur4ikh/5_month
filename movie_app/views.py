@@ -1,4 +1,5 @@
 from django.db.models import Count
+from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
@@ -6,27 +7,64 @@ from movie_app.models import Director, Movie, Review
 from movie_app.serializers import DirectorList, MovieList, ReviewMovie, AverageSerializer
 
 
-@api_view(['GET'])
+@api_view(['GET', 'POST'])
 def directors_name(request):
-    directors = Director.objects.annotate(movies_count=Count('movie'))
-    serializer = DirectorList(instance=directors, many=True)
-    return Response(serializer.data)
+    if request.method == 'GET':
+        directors = Director.objects.annotate(movies_count=Count('movie'))
+        serializer = DirectorList(instance=directors, many=True)
+        return Response(serializer.data)
+    elif request.method == 'POST':
+        name = request.data.get('name')
+        director = Director.objects.create(name=name)
+        data = DirectorList(instance=director, many=False).data
+
+        return Response(data, status=201)
 
 
-@api_view(['GET'])
+@api_view(['GET', 'PUT', 'DELETE'])
 def director(request, id):
-    name = Director.objects.get(id=id)
+    try:
+        data = Director.objects.get(id=id)
+    except Director.DoesNotExist:
+        return Response({'ERROR': 'Ничего не найдено!'}, status=404)
 
-    data = DirectorList(instance=name, many=False).data
+    if request.method == 'GET':
+        serializer = DirectorList(instance=data, many=False).data
 
-    return Response(data)
+        return Response(serializer, status=200)
+    elif request.method == 'PUT':
+        data.name = request.data.get('name', data.name)
+        data.save()
 
-@api_view(['GET'])
+        director = DirectorList(instance=data, many=False).data
+        return Response(director, status=200)
+    elif request.method == 'DELETE':
+        data.delete()
+        return Response(status=204)
+
+
+
+@api_view(['GET', 'POST'])
 def movie(request):
-    movie_name = Movie.objects.all()
-    movie_list = MovieList(instance=movie_name, many=True).data
+    if request.method == 'GET':
+        movie_name = Movie.objects.all()
+        movie_list = MovieList(instance=movie_name, many=True).data
 
-    return Response(movie_list)
+        return Response(movie_list)
+    elif request.method == 'POST':
+        title = request.data.get('title')
+        description = request.data.get('description')
+        duration = request.data.get('duration')
+        director_id = request.data.get('director_id')
+        post = Movie.objects.create(
+            title=title,
+            description=description,
+            duration=duration,
+            director_id=director_id,
+        )
+        data = MovieList(instance=post, many=False).data
+
+        return Response(data, status=201)
 
 @api_view(['GET'])
 def movie_detail(request, id):
