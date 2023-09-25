@@ -4,7 +4,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 from movie_app.models import Director, Movie, Review
-from movie_app.serializers import DirectorList, MovieList, ReviewList, AverageSerializer
+from movie_app.serializers import DirectorList, MovieList, ReviewList, AverageSerializer, DirectorValidated, MovieValidated, ReviewsValidated
 
 
 @api_view(['GET', 'POST'])
@@ -14,8 +14,11 @@ def directors_name(request):
         serializer = DirectorList(instance=directors, many=True)
         return Response(serializer.data)
     elif request.method == 'POST':
-        name = request.data.get('name')
-        director = Director.objects.create(name=name)
+        serializer = DirectorValidated(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        director = Director.objects.create(
+            name = serializer.validated_data.get('name')
+        )
         data = DirectorList(instance=director, many=False).data
 
         return Response(data, status=201)
@@ -33,7 +36,9 @@ def director(request, id):
 
         return Response(serializer, status=200)
     elif request.method == 'PUT':
-        data.name = request.data.get('name', data.name)
+        serializers = DirectorValidated(data=request.data)
+        serializers.is_valid(raise_exception=True)
+        data.name = serializers.validated_data.get('name', data.name)
         data.save()
 
         director = DirectorList(instance=data, many=False).data
@@ -52,15 +57,13 @@ def movie(request):
 
         return Response(movie_list)
     elif request.method == 'POST':
-        title = request.data.get('title')
-        description = request.data.get('description')
-        duration = request.data.get('duration')
-        director_id = request.data.get('director_id')
+        serializers = MovieValidated(data=request.data)
+        serializers.is_valid(raise_exception=True)
         post = Movie.objects.create(
-            title=title,
-            description=description,
-            duration=duration,
-            director_id=director_id,
+            title=serializers.validated_data.get('title'),
+            description=serializers.validated_data.get('description'),
+            duration=serializers.validated_data.get('duration'),
+            director_id=serializers.validated_data.get('director_id'),
         )
         data = MovieList(instance=post, many=False).data
 
@@ -78,10 +81,13 @@ def movie_detail(request, id):
 
         return Response(serializer, status=200)
     elif request.method == 'PUT':
-        data.title = request.data.get('title', data.title)
-        data.description = request.data.get('description', data.description)
-        data.duration = request.data.get('duration', data.duration)
-        data.director = request.data.get('director', data.director)
+        serializers = MovieValidated(data=request.data)
+        serializers.is_valid(raise_exception=True)
+
+        data.title = serializers.validated_data.get('title', data.title)
+        data.description = serializers.validated_data.get('description', data.description)
+        data.duration = serializers.validated_data.get('duration', data.duration)
+        data.director = serializers.validated_data.get('director', data.director)
         data.save()
 
         movi_edit = MovieList(instance=data, many=False).data
@@ -98,14 +104,13 @@ def review(request):
 
         return Response(movie_review)
     elif request.method == 'POST':
-        text = request.data.get('text')
-        movie = request.data.get('movie')
-        rating = request.data.get('rating')
+        serializers = ReviewsValidated(data=request.data)
+        serializers.is_valid(raise_exception=True)
 
         post = Review.objects.create(
-            text=text,
-            movie=movie,
-            rating=rating,
+            text=serializers.validated_data.get('text'),
+            movie_id=serializers.validated_data.get('movie_id'),
+            rating=serializers.validated_data.get('rating'),
         )
 
         data = ReviewList(instance=post, many=False).data
@@ -121,9 +126,11 @@ def review_detial(request, id):
         movie_review = ReviewList(instance=review, many=False).data
         return Response(movie_review)
     elif request.method == 'PUT':
-        review.text = request.data.get('text', review.text)
-        review.movie = request.data.get('movie', review.movie)
-        review.rating = request.data.get('rating', review.rating)
+        serializers = ReviewsValidated(data=request.data)
+        serializers.is_valid(raise_exception=True)
+        review.text = serializers.validated_data.get('text', review.text)
+        review.movie = serializers.validated_data.get('movie', review.movie)
+        review.rating = serializers.validated_data.get('rating', review.rating)
         review.save()
 
         review_edit = ReviewList(instance=review, many=False).data
