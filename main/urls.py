@@ -1,4 +1,5 @@
 from django.urls import path, include
+from django.contrib import admin
 from movie_app.views import (
     DirectorsListView,
     DirectorDetailView,
@@ -10,6 +11,7 @@ from movie_app.views import (
 )
 
 urlpatterns = [
+    path('admin/', admin.site.urls),
     path('api/v1/directors/', DirectorsListView.as_view(), name='directors-list'),
     path('api/v1/directors/<int:pk>/', DirectorDetailView.as_view(), name='director-detail'),
     path('api/v1/movies/', MovieListView.as_view(), name='movies-list'),
